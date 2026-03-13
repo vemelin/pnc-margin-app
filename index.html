@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PNC Investment & Margin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:       #053e76;
+      --navy-deep:  #002c44;
+      --navy-mid:   #0a5298;
+      --navy-light: #e3f0fb;
+      --slate:      #333f48;
+      --slate-dark: #171a1c;
+      --orange:     #ef6a00;
+      --orange-lgt: #fff3e6;
+      --bg:         #f0f2f5;
+      --g100:       #f5f6f8;
+      --g200:       #e8eaed;
+      --g300:       #d1d5db;
+      --g400:       #9ca3af;
+      --g500:       #6b7280;
+      --g700:       #374151;
+      --green:      #15803d;
+      --green-lgt:  #dcfce7;
+      --red:        #b91c1c;
+      --red-lgt:    #fee2e2;
+      --amber:      #b45309;
+      --amber-lgt:  #fef3c7;
+      --shadow:     0 2px 12px rgba(0,0,0,.10);
+      --shadow-lg:  0 8px 32px rgba(0,0,0,.14);
+      --shadow-xl:  0 20px 60px rgba(0,0,0,.18);
+      --radius:     10px;
+      --font:       'DM Sans', sans-serif;
+      --font-serif: 'DM Serif Display', serif;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--font); background: var(--bg); color: var(--slate); min-height: 100vh; }
+
+    /* NAV */
+    .top-bar { background: var(--slate); border-bottom: 3px solid var(--slate-dark); height: 54px; position: sticky; top: 0; z-index: 200; }
+    .top-bar-inner { display: flex; align-items: center; padding: 0 60px; height: 100%; gap: 12px; }
+    .logo-svg { height: 24px; width: 88px; flex-shrink: 0; }
+    .nav-links { display: flex; gap: 4px; margin-left: auto; }
+    .nav-item { padding: 0 16px; height: 54px; display: flex; align-items: center; color: rgba(255,255,255,.75); cursor: pointer; font-size: 14px; font-weight: 600; letter-spacing: .3px; position: relative; transition: color .18s; white-space: nowrap; user-select: none; }
+    .nav-item:hover { color: white; }
+    .nav-item.active { color: white; }
+    .nav-item.active::after { content: ''; position: absolute; bottom: 0; left: 16px; right: 16px; height: 3px; background: var(--orange); border-radius: 2px 2px 0 0; }
+    .phase-badge { margin-left: 16px; padding: 4px 10px; border-radius: 20px; background: rgba(239,106,0,.2); border: 1px solid rgba(239,106,0,.4); color: #ffa040; font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; cursor: pointer; transition: background .18s; }
+    .phase-badge:hover { background: rgba(239,106,0,.3); }
+
+    /* HEADER */
+    .header { background: linear-gradient(160deg, var(--navy) 0%, var(--navy-deep) 100%); padding: 28px 60px 36px; color: white; position: relative; overflow: hidden; }
+    .header::before { content: ''; position: absolute; right: -80px; top: -80px; width: 380px; height: 380px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.04) 0%, transparent 70%); pointer-events: none; }
+    .header-date { font-size: 13px; font-weight: 500; opacity: .65; margin-bottom: 6px; }
+    .header-title { font-family: var(--font-serif); font-size: 28px; margin-bottom: 3px; }
+    .header-sub { font-size: 13px; opacity: .6; }
+    .call-banner { background: rgba(185,28,28,.25); border: 1px solid rgba(239,68,68,.5); border-radius: 8px; padding: 12px 18px; display: flex; align-items: center; gap: 10px; margin-top: 20px; cursor: pointer; transition: background .18s; }
+    .call-banner:hover { background: rgba(185,28,28,.35); }
+    .call-banner-text { font-size: 13px; font-weight: 600; }
+    .call-banner-text small { display: block; font-weight: 400; opacity: .8; font-size: 12px; margin-top: 1px; }
+
+    /* LAYOUT */
+    .page-body { padding: 30px 60px 60px; }
+    .section-label { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; color: var(--g400); text-transform: uppercase; margin-bottom: 14px; }
+
+    /* CARDS */
+    .card-grid { display: grid; gap: 16px; margin-bottom: 28px; }
+    .card-grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .card-grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .stat-card { background: white; border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow); border-top: 3px solid var(--navy); transition: transform .18s, box-shadow .18s; animation: fadeUp .35s ease both; }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+    .stat-card.orange-top { border-top-color: var(--orange); }
+    .stat-card.green-top  { border-top-color: var(--green); }
+    .stat-card.red-top    { border-top-color: var(--red); }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+    .stat-label { font-size: 11px; font-weight: 700; color: var(--g400); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px; }
+    .stat-value { font-size: 24px; font-weight: 700; color: var(--slate); letter-spacing: -.5px; }
+    .stat-sub   { font-size: 12px; color: var(--g500); margin-top: 5px; }
+    .stat-chip  { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .chip-green { background: var(--green-lgt); color: var(--green); }
+    .chip-red   { background: var(--red-lgt); color: var(--red); }
+    .chip-amber { background: var(--amber-lgt); color: var(--amber); }
+
+    /* PANEL */
+    .panel { background: white; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; animation: fadeUp .35s ease both; }
+    .panel-hd { padding: 20px 26px 18px; border-bottom: 1px solid var(--g200); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .panel-title { font-size: 16px; font-weight: 700; color: var(--slate); }
+    .panel-sub   { font-size: 13px; color: var(--g500); margin-top: 2px; }
+    .panel-bd    { padding: 26px; }
+
+    /* HISTORY TABLE */
+    .hist-table { width: 100%; border-collapse: collapse; }
+    .hist-table th { font-size: 11px; font-weight: 700; color: var(--g400); text-transform: uppercase; letter-spacing: .8px; padding: 8px 14px; border-bottom: 1.5px solid var(--g200); text-align: left; }
+    .hist-table td { padding: 13px 14px; font-size: 13px; border-bottom: 1px solid var(--g200); color: var(--slate); }
+    .hist-table tr:last-child td { border-bottom: none; }
+    .hist-table tr:hover td { background: var(--g100); }
+    .badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .badge-green { background: var(--green-lgt); color: var(--green); }
+    .badge-amber { background: var(--amber-lgt); color: var(--amber); }
+    .badge-navy  { background: var(--navy-light); color: var(--navy); }
+
+    /* FORM */
+    .form-row { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+    .form-group { flex: 1; min-width: 200px; }
+    .form-group.full { flex: 0 0 100%; min-width: 0; }
+    .form-label { display: block; font-size: 12px; font-weight: 700; color: var(--g700); margin-bottom: 7px; text-transform: uppercase; letter-spacing: .5px; }
+    .form-label .req { color: var(--orange); margin-left: 2px; }
+    .form-control { width: 100%; padding: 10px 13px; border: 1.5px solid var(--g300); border-radius: 7px; font-size: 14px; font-family: var(--font); color: var(--slate); background: white; transition: border-color .18s, box-shadow .18s; appearance: none; }
+    .form-control:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(5,62,118,.10); }
+    select.form-control { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 13px center; padding-right: 36px; cursor: pointer; }
+    .amt-wrap { position: relative; }
+    .amt-wrap .sym { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--g500); font-weight: 600; pointer-events: none; }
+    .amt-wrap .form-control { padding-left: 26px; font-size: 20px; font-weight: 700; }
+
+    /* CALLOUT */
+    .callout { background: var(--navy-light); border: 1.5px solid #b8d4f0; border-radius: 8px; padding: 16px 18px; margin-top: 10px; animation: fadeSlide .22s ease; }
+    @keyframes fadeSlide { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+    .callout-title { font-size: 11px; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: .9px; margin-bottom: 12px; }
+    .callout-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid rgba(5,62,118,.1); font-size: 13px; }
+    .callout-row:last-of-type { border-bottom: none; }
+    .callout-row.total { padding-top: 10px; border-top: 1.5px solid rgba(5,62,118,.2); border-bottom: none; }
+    .callout-row .k { color: var(--g500); }
+    .callout-row .v { font-weight: 700; color: var(--slate); }
+    .callout-row.total .k { color: var(--navy); font-weight: 700; font-size: 14px; }
+    .callout-row.total .v { color: var(--navy); font-size: 15px; }
+    .callout-note { font-size: 11px; color: var(--g500); margin-top: 10px; line-height: 1.55; }
+
+    /* PREVIEW BOX */
+    .preview-box { background: var(--g100); border: 1.5px dashed var(--g300); border-radius: 8px; padding: 16px 18px; margin-bottom: 20px; }
+    .preview-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; }
+    .preview-row .pk { color: var(--g500); }
+    .preview-row .pv { font-weight: 700; color: var(--slate); }
+    .preview-row.highlight .pk { color: var(--navy); font-weight: 600; }
+    .preview-row.highlight .pv { color: var(--navy); font-size: 15px; }
+
+    /* BUTTONS */
+    .btn { padding: 11px 26px; border-radius: 7px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; font-family: var(--font); transition: all .18s; letter-spacing: .2px; white-space: nowrap; }
+    .btn-primary { background: var(--navy); color: white; }
+    .btn-primary:hover { background: var(--navy-mid); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(5,62,118,.25); }
+    .btn-secondary { background: transparent; color: var(--navy); border: 1.5px solid var(--navy); }
+    .btn-secondary:hover { background: var(--navy-light); }
+    .btn-sm { padding: 7px 16px; font-size: 12px; }
+
+    /* MARGIN TABLE */
+    .mp-table { width: 100%; border-collapse: collapse; }
+    .mp-table th { font-size: 11px; font-weight: 700; color: var(--g400); text-transform: uppercase; letter-spacing: .8px; padding: 8px 14px; border-bottom: 1.5px solid var(--g200); text-align: left; }
+    .mp-table td { padding: 13px 14px; font-size: 14px; border-bottom: 1px solid var(--g200); }
+    .mp-table tr:last-child td { border-bottom: none; }
+    .mp-table tr:hover td { background: var(--g100); }
+    .acct-name { font-weight: 700; }
+    .acct-num  { font-size: 12px; color: var(--g500); }
+    .driver-badge { display: inline-block; padding: 1px 8px; border-radius: 12px; background: var(--navy-light); color: var(--navy); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; margin-left: 6px; vertical-align: middle; }
+    .prog-bar  { height: 5px; background: var(--g200); border-radius: 3px; width: 100%; margin-top: 5px; }
+    .prog-fill { height: 100%; border-radius: 3px; }
+    .prog-fill.green  { background: var(--green); }
+    .prog-fill.orange { background: var(--orange); }
+    .prog-fill.red    { background: var(--red); }
+    .expand-row { cursor: pointer; }
+    .expand-row td:first-child::before { content: '▶ '; font-size: 9px; color: var(--g400); }
+    .expand-row.open td:first-child::before { content: '▼ '; }
+    .detail-row { background: var(--g100); }
+    .detail-row td { padding: 10px 14px 14px 32px; }
+    .detail-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+    .detail-item .dk { font-size: 11px; color: var(--g400); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 2px; }
+    .detail-item .dv { font-size: 14px; font-weight: 700; color: var(--slate); }
+
+    /* CALCULATOR */
+    .calc-panel { background: white; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .calc-hd { background: var(--navy); padding: 18px 24px; color: white; }
+    .calc-hd h3 { font-size: 15px; font-weight: 700; }
+    .calc-hd p  { font-size: 13px; opacity: .7; margin-top: 3px; }
+    .calc-bd { padding: 24px; }
+    .calc-slider { width: 100%; margin: 10px 0; accent-color: var(--navy); }
+    .calc-result { background: var(--navy-light); border-radius: 8px; padding: 16px; margin-top: 16px; }
+    .calc-result-row { display: flex; justify-content: space-between; font-size: 14px; padding: 4px 0; }
+    .calc-result-row b { color: var(--navy); font-weight: 700; }
+    .scenario-highlight { background: var(--amber-lgt); border: 1px solid var(--amber); border-radius: 6px; padding: 10px 14px; margin-top: 10px; font-size: 13px; color: var(--amber); }
+
+    /* EDU CARDS */
+    .edu-topics { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; margin-bottom: 28px; }
+    .edu-card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 22px; cursor: pointer; transition: all .18s; border-left: 4px solid var(--navy); }
+    .edu-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+    .edu-card.orange-l { border-left-color: var(--orange); }
+    .edu-card h3 { font-size: 14px; font-weight: 700; color: var(--slate); margin-bottom: 5px; }
+    .edu-card p  { font-size: 13px; color: var(--g500); line-height: 1.5; }
+
+    /* ═══════════════════════════════
+       WIZARD STEPPER
+    ═══════════════════════════════ */
+    .wizard-stepper { display: flex; align-items: flex-start; justify-content: center; margin-bottom: 32px; padding-top: 28px; }
+    .wstep { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; max-width: 220px; position: relative; }
+    .wstep:not(:last-child)::after { content: ''; position: absolute; top: 17px; left: calc(50% + 22px); right: calc(-50% + 22px); height: 2px; background: var(--g300); z-index: 0; }
+    .wstep.done:not(:last-child)::after  { background: var(--navy); }
+    .wstep.active:not(:last-child)::after { background: var(--g300); }
+    .wstep-circle { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--g300); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--g400); background: white; z-index: 1; transition: all .3s; position: relative; }
+    .wstep.active .wstep-circle { border-color: var(--navy); background: var(--navy); color: white; box-shadow: 0 0 0 4px rgba(5,62,118,.12); }
+    .wstep.done   .wstep-circle { border-color: var(--navy); background: var(--navy); color: white; }
+    .wstep-label { font-size: 11px; font-weight: 700; color: var(--g400); text-transform: uppercase; letter-spacing: .7px; text-align: center; line-height: 1.4; }
+    .wstep.active .wstep-label { color: var(--navy); }
+    .wstep.done   .wstep-label { color: var(--navy); }
+
+    /* WIZARD PAGES */
+    .wizard-wrap { max-width: 820px; margin: 0 auto; }
+    .wpage { background: white; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; animation: fadeUp .3s ease; }
+    .wpage-hd { padding: 24px 32px 20px; border-bottom: 1px solid var(--g200); }
+    .wpage-hd h2 { font-family: var(--font-serif); font-size: 22px; color: var(--slate); }
+    .wpage-hd p  { font-size: 13px; color: var(--g500); margin-top: 4px; }
+    .wpage-bd { padding: 32px; }
+    .wpage-ft { padding: 20px 32px; border-top: 1px solid var(--g200); display: flex; justify-content: space-between; align-items: center; background: var(--g100); }
+
+    /* REVIEW ROWS */
+    .review-section { margin-bottom: 22px; }
+    .review-section-title { font-size: 11px; font-weight: 700; color: var(--g400); text-transform: uppercase; letter-spacing: .9px; margin-bottom: 10px; }
+    .review-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--g200); font-size: 14px; }
+    .review-row:last-child { border-bottom: none; }
+    .review-row .rk { color: var(--g500); }
+    .review-row .rv { font-weight: 700; color: var(--slate); text-align: right; }
+    .review-warning { background: var(--amber-lgt); border: 1px solid var(--amber); border-radius: 8px; padding: 12px 16px; font-size: 13px; color: var(--amber); margin-bottom: 20px; }
+    .review-legal { font-size: 11px; color: var(--g400); line-height: 1.65; padding-top: 16px; border-top: 1px solid var(--g200); margin-top: 4px; }
+
+    /* CONFIRMATION */
+    .confirm-hero { text-align: center; padding: 10px 0 24px; }
+    .confirm-check { width: 72px; height: 72px; border-radius: 50%; background: var(--green-lgt); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+    .confirm-title { font-family: var(--font-serif); font-size: 26px; color: var(--slate); margin-bottom: 8px; }
+    .confirm-sub   { font-size: 14px; color: var(--g500); max-width: 380px; margin: 0 auto 28px; line-height: 1.6; }
+    .confirm-detail { background: var(--g100); border-radius: 10px; padding: 20px 24px; max-width: 440px; margin: 0 auto 8px; }
+    .confirm-row { display: flex; justify-content: space-between; font-size: 14px; padding: 6px 0; }
+    .confirm-row .ck { color: var(--g500); }
+    .confirm-row .cv { font-weight: 700; color: var(--slate); }
+    .confirm-row.big .cv { font-size: 20px; color: var(--navy); }
+    .confirm-ref { font-size: 12px; color: var(--g400); text-align: center; margin-bottom: 28px; }
+    .confirm-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+
+    /* PHASE PANEL */
+    .phase-panel { position: fixed; top: 60px; right: 20px; z-index: 300; background: white; border-radius: 10px; box-shadow: var(--shadow-xl); padding: 18px 20px; width: 260px; display: none; }
+    .phase-panel.open { display: block; animation: fadeSlide .18s ease; }
+    .phase-panel h4 { font-size: 13px; font-weight: 700; color: var(--slate); margin-bottom: 12px; }
+    .phase-opt { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 7px; cursor: pointer; border: 1.5px solid var(--g200); margin-bottom: 8px; transition: all .15s; }
+    .phase-opt:hover { border-color: var(--navy); background: var(--navy-light); }
+    .phase-opt.selected { border-color: var(--navy); background: var(--navy-light); }
+    .phase-opt-num { font-size: 20px; font-weight: 700; color: var(--navy); line-height: 1; flex-shrink: 0; }
+    .phase-opt-text h5 { font-size: 13px; font-weight: 700; color: var(--slate); }
+    .phase-opt-text p  { font-size: 11px; color: var(--g500); margin-top: 2px; }
+
+    /* MODAL */
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: center; justify-content: center; z-index: 500; }
+    .overlay.open { display: flex; }
+    .modal { background: white; border-radius: 14px; padding: 36px 38px; width: 480px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-xl); animation: popIn .22s cubic-bezier(.34,1.56,.64,1); }
+    @keyframes popIn { from { opacity:0; transform: scale(.93); } to { opacity:1; transform: scale(1); } }
+    .modal-icon { width: 52px; height: 52px; border-radius: 50%; margin: 0 auto 18px; display: flex; align-items: center; justify-content: center; }
+    .modal-icon.red { background: var(--red-lgt); }
+    .modal-title { text-align: center; font-size: 20px; font-weight: 700; color: var(--slate); margin-bottom: 6px; }
+    .modal-sub   { text-align: center; font-size: 13px; color: var(--g500); margin-bottom: 22px; line-height: 1.55; }
+    .modal-detail { background: var(--g100); border-radius: 8px; padding: 16px 18px; margin-bottom: 20px; }
+    .modal-detail-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 14px; }
+    .modal-detail-row .k { color: var(--g500); }
+    .modal-detail-row .v { font-weight: 700; }
+
+    /* TOAST */
+    .toast { position: fixed; bottom: 28px; right: 28px; z-index: 600; background: var(--green); color: white; border-radius: 8px; padding: 13px 20px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.18); opacity: 0; transform: translateY(12px); pointer-events: none; transition: opacity .3s, transform .3s; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 1100px) {
+      .top-bar-inner, .header, .page-body { padding-left: 24px; padding-right: 24px; }
+      .card-grid-4 { grid-template-columns: repeat(2,1fr); }
+      .edu-topics  { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 700px) {
+      .card-grid-3, .card-grid-4 { grid-template-columns: 1fr; }
+      .wstep-label { display: none; }
+      .wpage-bd, .wpage-ft { padding: 20px; }
+    }
+    .stat-card:nth-child(1){animation-delay:.05s}
+    .stat-card:nth-child(2){animation-delay:.10s}
+    .stat-card:nth-child(3){animation-delay:.15s}
+    .stat-card:nth-child(4){animation-delay:.20s}
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<div class="top-bar">
+  <div class="top-bar-inner">
+    <svg class="logo-svg" viewBox="0 0 88 24" fill="none">
+      <circle cx="12" cy="12" r="12" fill="white" opacity=".95"/>
+      <circle cx="12" cy="12" r="7.2" fill="white" opacity=".3"/>
+      <circle cx="12" cy="12" r="4.6" fill="#ef6a00"/>
+      <text x="30" y="17" font-family="Arial" font-weight="800" font-size="14" fill="white" letter-spacing="1.5">PNC</text>
+    </svg>
+    <div class="nav-links">
+      <div class="nav-item active" onclick="navigate('dashboard')">Dashboard</div>
+      <div class="nav-item" onclick="navigate('transfer')">Pay &amp; Transfer</div>
+      <div class="nav-item" onclick="navigate('margin')">Margin Profile</div>
+    </div>
+    <div class="phase-badge" onclick="togglePhasePanel()" id="phaseBadge">Phase 1 ▾</div>
+  </div>
+</div>
+
+<!-- PHASE PANEL -->
+<div class="phase-panel" id="phasePanel">
+  <h4>Rollout Phase</h4>
+  <div class="phase-opt selected" onclick="setPhase(1,this)">
+    <div class="phase-opt-num">1</div>
+    <div class="phase-opt-text"><h5>MVP</h5><p>Generic call banner · Core balances · Auto-paydown</p></div>
+  </div>
+  <div class="phase-opt" onclick="setPhase(2,this)">
+    <div class="phase-opt-num">2</div>
+    <div class="phase-opt-text"><h5>Enhanced</h5><p>Multi-margin · Full balances · Buy power estimates</p></div>
+  </div>
+  <div class="phase-opt" onclick="setPhase(3,this)">
+    <div class="phase-opt-num">3</div>
+    <div class="phase-opt-text"><h5>Full</h5><p>Detailed call data · In-app remediation actions</p></div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-date" id="hDate"></div>
+  <div class="header-title" id="headerTitle">Welcome Back, Vasko</div>
+  <div class="header-sub" id="headerSub">Investment &amp; Margin Dashboard</div>
+  <div class="call-banner" id="callBanner" onclick="openModal('callModal')" style="display:none">
+    <span style="font-size:18px;flex-shrink:0">⚠️</span>
+    <div class="call-banner-text">
+      <span id="callBannerText">You may be in a margin call. Please call support.</span>
+      <small id="callBannerSub">1-888-762-2265 · Mon–Fri 8am–9pm ET</small>
+    </div>
+    <span style="margin-left:auto;opacity:.7;font-size:20px">›</span>
+  </div>
+</div>
+
+<!-- PAGE BODY -->
+<div class="page-body">
+
+  <!-- ██ DASHBOARD ██ -->
+  <div id="view-dashboard">
+    <div class="section-label">Quick Snapshot</div>
+    <div class="card-grid card-grid-4">
+      <div class="stat-card"><div class="stat-label">Net Account Equity</div><div class="stat-value">$184,200</div><div class="stat-sub">As of market close</div><div class="stat-chip chip-green">▲ 2.3% today</div></div>
+      <div class="stat-card orange-top"><div class="stat-label">Margin Debit</div><div class="stat-value">$12,400</div><div class="stat-sub">Outstanding loan balance</div><div class="stat-chip chip-amber">Interest accruing</div></div>
+      <div class="stat-card green-top"><div class="stat-label">Buying Power</div><div class="stat-value">$38,620</div><div class="stat-sub">Cash + borrowing capacity</div><div class="stat-chip chip-green">Reg T applied</div></div>
+      <div class="stat-card"><div class="stat-label">Settled Cash</div><div class="stat-value">$8,450</div><div class="stat-sub">Available immediately</div></div>
+    </div>
+    <div class="section-label">Transfer Availability</div>
+    <div class="card-grid card-grid-3">
+      <div class="stat-card"><div class="stat-label">Settled Cash</div><div class="stat-value">$8,450</div><div class="stat-sub">Safe to transfer, no interest</div></div>
+      <div class="stat-card orange-top"><div class="stat-label">Margin Available</div><div class="stat-value">$12,300</div><div class="stat-sub">Additional margin credit</div></div>
+      <div class="stat-card green-top"><div class="stat-label">Total Available to Transfer</div><div class="stat-value">$20,750</div><div class="stat-sub">Settled cash + margin</div></div>
+    </div>
+    <div style="margin-bottom:32px">
+      <button class="btn btn-primary" onclick="navigate('transfer')" style="margin-right:10px">Make a Transfer</button>
+      <button class="btn btn-secondary" onclick="navigate('margin')">View Margin Profile</button>
+    </div>
+
+    <!-- Transfer Activity on Dashboard -->
+    <div class="section-label">Transfer Activity</div>
+    <div class="panel">
+      <div class="panel-hd">
+        <div><div class="panel-title">Recent Transfers</div><div class="panel-sub">All account transfer activity</div></div>
+        <button class="btn btn-secondary btn-sm" onclick="navigate('transfer')">New Transfer</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="hist-table">
+          <thead><tr><th>Date</th><th>From</th><th>To</th><th>Amount</th><th>Type</th><th>Landing</th><th>Status</th></tr></thead>
+          <tbody id="histBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ██ PAY & TRANSFER — WIZARD ██ -->
+  <div id="view-transfer" style="display:none">
+
+    <!-- Wizard stepper (shared across all steps) -->
+    <div class="wizard-wrap">
+      <div class="wizard-stepper" id="wizardStepper">
+        <div class="wstep active" id="wdot1">
+          <div class="wstep-circle" id="wc1">1</div>
+          <div class="wstep-label">Make a Transfer</div>
+        </div>
+        <div class="wstep" id="wdot2">
+          <div class="wstep-circle" id="wc2">2</div>
+          <div class="wstep-label">Review Information</div>
+        </div>
+        <div class="wstep" id="wdot3">
+          <div class="wstep-circle" id="wc3">3</div>
+          <div class="wstep-label">Confirmation</div>
+        </div>
+      </div>
+
+      <!-- STEP 1 -->
+      <div id="wstep1" class="wpage">
+        <div class="wpage-hd">
+          <h2>Make a PNC Transfer</h2>
+          <p>Enter your transfer details below. All required fields are marked with an asterisk.</p>
+        </div>
+        <div class="wpage-bd">
+          <div class="form-row">
+            <div class="form-group full">
+              <label class="form-label">Transfer Type <span class="req">*</span></label>
+              <select class="form-control" id="txType" onchange="onTxTypeChange()">
+                <option value="">— Select transfer type —</option>
+                <option value="dda-invest">DDA → Investment (Deposit)</option>
+                <option value="invest-dda">Investment → DDA (Withdrawal)</option>
+                <option value="invest-invest">Between Investment Accounts</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">From Account <span class="req">*</span></label>
+              <select class="form-control" id="fromAcct" onchange="onAccountChange()">
+                <option value="">— Select account —</option>
+                <option value="checking">PNC Checking ····2203 — Avail: $14,200</option>
+                <option value="savings">PNC Savings ····9104 — Avail: $6,800</option>
+                <option value="margin">Margin Account ····4821 — Margin/Settled</option>
+                <option value="ira">IRA Account ····3309</option>
+              </select>
+              <div id="calloutBox" style="display:none" class="callout">
+                <div class="callout-title">Available Funds Breakdown</div>
+                <div class="callout-row"><span class="k">Settled Cash Balance</span><span class="v">$8,450.00</span></div>
+                <div class="callout-row"><span class="k">Additional Margin Available</span><span class="v">$12,300.00</span></div>
+                <div class="callout-row"><span class="k">Current Margin Debit</span><span class="v" style="color:var(--red)">$12,400.00</span></div>
+                <div class="callout-row total"><span class="k">Total Available to Transfer</span><span class="v">$20,750.00</span></div>
+                <div class="callout-note">⚠ This is not your total account value. Transfers using margin may incur interest. Settled cash is interest-free.</div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">To Account <span class="req">*</span></label>
+              <select class="form-control" id="toAcct" onchange="onToChange()">
+                <option value="">— Select account —</option>
+                <option value="checking">PNC Checking ····2203</option>
+                <option value="savings">PNC Savings ····9104</option>
+                <option value="margin">Margin Account ····4821</option>
+                <option value="ira">IRA Account ····3309</option>
+                <option value="external">External Bank ····7700</option>
+              </select>
+              <div id="autoPayNote" style="display:none;margin-top:10px;background:var(--amber-lgt);border:1px solid #f59e0b;border-radius:8px;padding:10px 14px;font-size:13px;color:var(--amber)">
+                <b>Auto-paydown applies.</b> This account has a $12,400 margin debit. Funds transferred here will automatically reduce your margin loan.
+              </div>
+            </div>
+          </div>
+          <!-- Phase 2+ landing choice -->
+          <div id="landingChoice" style="display:none" class="form-row">
+            <div class="form-group full">
+              <label class="form-label">How should funds land?</label>
+              <div style="display:flex;gap:12px;flex-wrap:wrap">
+                <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:10px 14px;border:1.5px solid var(--navy);border-radius:7px;background:var(--navy-light);flex:1;min-width:180px">
+                  <input type="radio" name="landing" value="auto" checked style="margin-top:3px">
+                  <div><div style="font-size:13px;font-weight:700;color:var(--navy)">Auto-apply to margin debit</div><div style="font-size:12px;color:var(--g500)">Reduces interest · Default</div></div>
+                </label>
+                <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:10px 14px;border:1.5px solid var(--g300);border-radius:7px;flex:1;min-width:180px">
+                  <input type="radio" name="landing" value="cash" style="margin-top:3px">
+                  <div><div style="font-size:13px;font-weight:700;color:var(--g700)">Deposit to cash balance</div><div style="font-size:12px;color:var(--g500)">Subject to custodian support</div></div>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Amount <span class="req">*</span></label>
+              <div class="amt-wrap">
+                <span class="sym">$</span>
+                <input type="number" class="form-control" id="txAmount" placeholder="0.00" min="0" step="0.01" oninput="updatePreview()">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Transfer Date</label>
+              <input type="text" class="form-control" id="txDate" readonly>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group full">
+              <label class="form-label">Memo (optional)</label>
+              <input type="text" class="form-control" id="txMemo" placeholder="Add a note...">
+            </div>
+          </div>
+          <div class="preview-box" id="previewBox" style="display:none">
+            <div style="font-size:11px;font-weight:700;color:var(--g400);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Live Transfer Preview</div>
+            <div class="preview-row"><span class="pk">Current Margin Debit</span><span class="pv" id="prvDebitBefore">—</span></div>
+            <div class="preview-row highlight"><span class="pk">New Margin Debit After Transfer</span><span class="pv" id="prvDebitAfter">—</span></div>
+            <div class="preview-row"><span class="pk">Est. Buying Power After</span><span class="pv" id="prvBuyPower">—</span></div>
+            <div class="preview-row"><span class="pk">Expected Settlement</span><span class="pv" id="prvSettle">—</span></div>
+          </div>
+        </div>
+        <div class="wpage-ft">
+          <button class="btn btn-secondary" onclick="clearTxForm()">Clear</button>
+          <button class="btn btn-primary" onclick="goStep2()">Continue to Review →</button>
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div id="wstep2" class="wpage" style="display:none">
+        <div class="wpage-hd">
+          <h2>Review Information</h2>
+          <p>Please verify all details carefully. This action cannot be undone once confirmed.</p>
+        </div>
+        <div class="wpage-bd">
+          <div id="reviewWarning"></div>
+          <div class="review-section">
+            <div class="review-section-title">Transfer Details</div>
+            <div id="reviewRows"></div>
+          </div>
+          <div id="reviewImpact" class="review-section" style="display:none">
+            <div class="review-section-title">Margin Impact</div>
+            <div id="reviewImpactRows"></div>
+          </div>
+          <div class="review-legal">
+            By confirming this transfer, you acknowledge that transfers to margin accounts may be applied to outstanding margin loan balances. Margin trading involves risk of loss and is not appropriate for all investors. Past performance is not indicative of future results. All transfers are subject to verification and applicable limits.
+          </div>
+        </div>
+        <div class="wpage-ft">
+          <button class="btn btn-secondary" onclick="goStep1()">← Edit Transfer</button>
+          <button class="btn btn-primary" onclick="goStep3()">Confirm Transfer →</button>
+        </div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div id="wstep3" class="wpage" style="display:none">
+        <div class="wpage-bd">
+          <div class="confirm-hero">
+            <div class="confirm-check">
+              <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><path d="M9 18l6 6 12-12" stroke="#15803d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="confirm-title">Transfer Submitted</div>
+            <div class="confirm-sub">Your transfer has been received and is being processed. You'll receive a notification once it settles.</div>
+            <div class="confirm-detail" id="confirmDetail"></div>
+            <div class="confirm-ref" id="confirmRef"></div>
+            <div class="confirm-actions">
+              <button class="btn btn-secondary" onclick="startNewTransfer()">Make Another Transfer</button>
+              <button class="btn btn-primary" onclick="navigate('dashboard')">Return to Dashboard</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- end wizard-wrap -->
+  </div><!-- end view-transfer -->
+
+  <!-- ██ MARGIN PROFILE ██ -->
+  <div id="view-margin" style="display:none">
+    <div class="card-grid card-grid-4">
+      <div class="stat-card"><div class="stat-label">Market Value</div><div class="stat-value">$196,600</div><div class="stat-sub">Marginable securities</div></div>
+      <div class="stat-card red-top"><div class="stat-label">Margin Debit</div><div class="stat-value">$12,400</div><div class="stat-sub">Current loan balance</div><div class="stat-chip chip-red">Interest: 9.75% APR</div></div>
+      <div class="stat-card"><div class="stat-label">Margin Equity</div><div class="stat-value">$184,200</div><div class="stat-sub">Market value − debit</div><div class="stat-chip chip-green">93.7% equity ratio</div></div>
+      <div class="stat-card orange-top"><div class="stat-label">Buying Power</div><div class="stat-value">$38,620</div><div class="stat-sub" id="mpBuyPowerSub">Cash + borrowing (2× Reg T)</div></div>
+    </div>
+
+    <div id="extraBalances" style="display:none;margin-bottom:28px">
+      <div class="section-label">Detailed Balance Breakdown</div>
+      <div class="card-grid card-grid-4">
+        <div class="stat-card"><div class="stat-label">Reg T (Fed Initial)</div><div class="stat-value">50%</div><div class="stat-sub">Required on purchase</div></div>
+        <div class="stat-card">
+          <div class="stat-label">House Maintenance</div><div class="stat-value">30%</div><div class="stat-sub">Ongoing minimum</div>
+          <div class="prog-bar"><div class="prog-fill green" style="width:93%"></div></div>
+          <div style="font-size:11px;color:var(--g500);margin-top:3px">Current: 93.7% — Safe</div>
+        </div>
+        <div class="stat-card"><div class="stat-label">Exchange / Day-Trade</div><div class="stat-value">25%</div><div class="stat-sub">Day-trade buying power</div></div>
+        <div class="stat-card orange-top"><div class="stat-label">SMA Balance</div><div class="stat-value">$3,210</div><div class="stat-sub">Special Memorandum Account</div></div>
+      </div>
+    </div>
+
+    <div class="section-label">Account Detail</div>
+    <div class="panel" style="margin-bottom:28px">
+      <div class="panel-hd">
+        <div><div class="panel-title">Margin Account Configuration</div><div class="panel-sub" id="multiMarginSub">Single account view</div></div>
+        <button class="btn btn-secondary btn-sm" onclick="navigate('transfer')">Make Transfer</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="mp-table" id="mpTable"></table>
+      </div>
+    </div>
+
+    <div id="callActions" style="display:none;margin-bottom:28px">
+      <div class="section-label">Margin Call — Action Required</div>
+      <div class="panel">
+        <div class="panel-bd">
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+            <div style="flex:1"><div style="font-size:16px;font-weight:700;color:var(--red)">Margin Call: $1,840 required by Mar 17</div><div style="font-size:13px;color:var(--g500);margin-top:4px">Deposit cash or sell eligible positions to meet the requirement</div></div>
+            <button class="btn btn-primary" onclick="navigate('transfer')">Deposit Cash</button>
+            <button class="btn btn-sm" style="background:var(--red-lgt);color:var(--red);border:none;padding:11px 20px;border-radius:7px;font-weight:700;cursor:pointer;font-family:var(--font)">Suggest Sells</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEARN section moved here -->
+    <div class="section-label">Learn About Margin</div>
+    <div class="edu-topics">
+      <div class="edu-card" onclick="openModal('eduMargin')"><h3>📘 What is Margin?</h3><p>Understand how borrowing against your securities works, the risks involved, and when it makes sense.</p></div>
+      <div class="edu-card orange-l" onclick="openModal('eduBuyPower')"><h3>⚡ Buying Power Explained</h3><p>Learn how Reg T, house maintenance, and day-trade requirements affect how much you can buy.</p></div>
+      <div class="edu-card" onclick="openModal('eduCall')"><h3>🚨 What Triggers a Margin Call?</h3><p>Step-by-step: when maintenance falls below minimums, what happens, and how to respond.</p></div>
+      <div class="edu-card orange-l" onclick="openModal('eduTransfer')"><h3>💸 How Transfers Affect Margin</h3><p>Why deposits auto-pay your loan and how to calculate the impact on debit and buying power.</p></div>
+    </div>
+
+    <!-- Calculators below account detail -->
+    <div class="section-label">Interactive Calculators</div>
+    <div class="card-grid card-grid-2" style="margin-bottom:0">
+      <div class="calc-panel">
+        <div class="calc-hd"><h3>Buying Power &amp; Borrowing</h3><p>See how equity translates to purchasing power</p></div>
+        <div class="calc-bd">
+          <label style="font-size:12px;font-weight:700;color:var(--g700);text-transform:uppercase;letter-spacing:.5px">Your Cash / Equity</label>
+          <input type="range" class="calc-slider" id="calcEquity" min="1000" max="100000" step="500" value="10000" oninput="calcBuyPower()">
+          <div style="font-size:20px;font-weight:700;color:var(--navy);margin-top:4px" id="calcEquityVal">$10,000</div>
+          <label style="font-size:12px;font-weight:700;color:var(--g700);text-transform:uppercase;letter-spacing:.5px;margin-top:14px;display:block">Stock Drop Scenario</label>
+          <input type="range" class="calc-slider" id="calcDrop" min="0" max="80" step="5" value="0" oninput="calcBuyPower()">
+          <div style="font-size:14px;color:var(--g500)" id="calcDropVal">No drop (0%)</div>
+          <div class="calc-result" id="calcResult"></div>
+          <div id="calcWarning"></div>
+        </div>
+      </div>
+      <div class="calc-panel">
+        <div class="calc-hd"><h3>Deposit → Margin Paydown</h3><p>Watch your margin debit shrink in real time</p></div>
+        <div class="calc-bd">
+          <label style="font-size:12px;font-weight:700;color:var(--g700);text-transform:uppercase;letter-spacing:.5px">Starting Margin Debit</label>
+          <input type="range" class="calc-slider" id="calcDebit" min="0" max="50000" step="500" value="12400" oninput="calcPaydown()">
+          <div style="font-size:20px;font-weight:700;color:var(--red)" id="calcDebitVal">$12,400</div>
+          <label style="font-size:12px;font-weight:700;color:var(--g700);text-transform:uppercase;letter-spacing:.5px;margin-top:14px;display:block">Your Deposit Amount</label>
+          <input type="range" class="calc-slider" id="calcDeposit" min="0" max="20000" step="100" value="3000" oninput="calcPaydown()">
+          <div style="font-size:14px;color:var(--g500)" id="calcDepositVal">$3,000 deposit</div>
+          <div class="calc-result" id="paydownResult"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end page-body -->
+
+<!-- MODALS -->
+<div class="overlay" id="callModal" onclick="if(event.target===this)closeModal('callModal')">
+  <div class="modal">
+    <div class="modal-icon red"><svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M14 8v8M14 20v.5" stroke="#b91c1c" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+    <div class="modal-title" id="callModalTitle">Margin Call Notice</div>
+    <div class="modal-sub" id="callModalSub">Please review your account status.</div>
+    <div class="modal-detail" id="callModalDetail"></div>
+    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px" id="callModalActions"></div>
+  </div>
+</div>
+
+<div class="overlay" id="eduMargin" onclick="if(event.target===this)closeModal('eduMargin')">
+  <div class="modal">
+    <div class="modal-title">What is Margin?</div>
+    <div style="font-size:14px;color:var(--g700);line-height:1.7;margin-bottom:20px">
+      <p style="margin-bottom:12px">Margin lets you borrow money from your broker using your securities as collateral. For every $1 of your own money, you can typically buy up to $2 of stock (2× leverage under Reg T).</p>
+      <p style="margin-bottom:12px"><b>How it works:</b> You deposit $10,000 → broker lends up to $10,000 more → you can buy $20,000 in stock.</p>
+      <p style="margin-bottom:12px"><b>The risks:</b> If your investments fall, losses are amplified. If equity drops below 30% (house maintenance), you'll receive a margin call.</p>
+      <p>Interest accrues daily on the borrowed amount at your current margin rate.</p>
+    </div>
+    <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary" onclick="closeModal('eduMargin')">Got it</button></div>
+  </div>
+</div>
+<div class="overlay" id="eduBuyPower" onclick="if(event.target===this)closeModal('eduBuyPower')">
+  <div class="modal">
+    <div class="modal-title">Buying Power Explained</div>
+    <div style="font-size:14px;color:var(--g700);line-height:1.7;margin-bottom:20px">
+      <p style="margin-bottom:12px"><b>Reg T (Federal / Initial Margin):</b> 50% of the purchase price must be your own equity. Max 2× leverage on new purchases.</p>
+      <p style="margin-bottom:12px"><b>House Maintenance:</b> After purchase, equity must stay ≥ 30% of market value. Below this triggers a margin call.</p>
+      <p><b>Exchange / Day-Trade:</b> 25% requirement. Pattern day traders get up to 4× intraday buying power.</p>
+    </div>
+    <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary" onclick="closeModal('eduBuyPower')">Got it</button></div>
+  </div>
+</div>
+<div class="overlay" id="eduCall" onclick="if(event.target===this)closeModal('eduCall')">
+  <div class="modal">
+    <div class="modal-title">What Triggers a Margin Call?</div>
+    <div style="font-size:14px;color:var(--g700);line-height:1.7;margin-bottom:20px">
+      <p style="margin-bottom:10px"><b>Example:</b> You bought $20,000 of stock using $10,000 equity + $10,000 margin loan.</p>
+      <p style="margin-bottom:10px">Stock drops 40% → Market value = $12,000. Equity = $2,000. Equity ratio = 16.7% — below the 30% house minimum → <b>Margin Call!</b></p>
+      <p style="margin-bottom:10px"><b>To resolve:</b> Deposit cash or sell positions to restore required equity.</p>
+      <p>If unresolved, the broker may force-liquidate positions.</p>
+    </div>
+    <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary" onclick="closeModal('eduCall')">Got it</button></div>
+  </div>
+</div>
+<div class="overlay" id="eduTransfer" onclick="if(event.target===this)closeModal('eduTransfer')">
+  <div class="modal">
+    <div class="modal-title">How Transfers Affect Margin</div>
+    <div style="font-size:14px;color:var(--g700);line-height:1.7;margin-bottom:20px">
+      <p style="margin-bottom:10px"><b>DDA → Investment (deposit):</b> Cash deposited into a margin account reduces your margin debit dollar-for-dollar, lowering interest and improving your equity ratio.</p>
+      <p style="margin-bottom:10px"><b>Example:</b> Margin debit = $12,400. Deposit $3,000. New debit = $9,400. Buying power increases accordingly.</p>
+      <p><b>Investment → DDA (withdrawal):</b> Withdrawing reduces equity. If equity falls below the maintenance floor, this could trigger or worsen a margin call.</p>
+    </div>
+    <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary" onclick="closeModal('eduTransfer')">Got it</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="9" fill="rgba(255,255,255,.25)"/><path d="M5 9l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  Transfer submitted successfully!
+</div>
+
+<script>
+// ═══ STATE ═══
+let currentPhase = 1;
+let transferHistory = [
+  {date:'Mar 12, 2025',from:'Margin ····4821',to:'Checking ····2203',amount:'$3,500.00',type:'Investment → DDA',landing:'Auto-paydown',status:'Completed'},
+  {date:'Mar 10, 2025',from:'Checking ····2203',to:'Margin ····4821',amount:'$1,200.00',type:'DDA → Investment',landing:'Auto-paydown',status:'Completed'},
+  {date:'Mar 7, 2025', from:'Margin ····4821',to:'External ····7700',amount:'$8,000.00',type:'Investment → DDA',landing:'Cash',status:'Completed'},
+  {date:'Mar 5, 2025', from:'Savings ····9104',to:'Checking ····2203',amount:'$500.00',  type:'Internal',      landing:'N/A',status:'Pending'},
+];
+const acctLabels = {checking:'PNC Checking ····2203',savings:'PNC Savings ····9104',margin:'Margin Account ····4821',ira:'IRA Account ····3309',external:'External Bank ····7700'};
+
+// ═══ INIT ═══
+window.addEventListener('DOMContentLoaded', () => {
+  const d = new Date();
+  document.getElementById('hDate').textContent = d.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric',year:'numeric'});
+  const tmr = new Date(d); tmr.setDate(tmr.getDate()+1);
+  document.getElementById('txDate').value = tmr.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  navigate('dashboard');  // sets header, banner, active nav
+  renderHistory();
+  buildMarginTable();
+  calcBuyPower();
+  calcPaydown();
+  applyPhase();
+});
+
+// ═══ NAV ═══
+function navigate(view) {
+  ['dashboard','transfer','margin'].forEach(v => document.getElementById('view-'+v).style.display = v===view?'block':'none');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const map = {dashboard:'Dashboard',transfer:'Pay & Transfer',margin:'Margin Profile'};
+  document.querySelectorAll('.nav-item').forEach(n => { if(n.textContent.trim()===map[view]) n.classList.add('active'); });
+
+  // Dynamic header per page
+  const titles = { dashboard:'Welcome Back, Vasko', transfer:'Make a PNC Transfer', margin:'Margin Profile' };
+  const subs   = { dashboard:'Investment &amp; Margin Dashboard', transfer:'Pay &amp; Transfer · Investment Accounts', margin:'Account balances, requirements &amp; education' };
+  document.getElementById('headerTitle').innerHTML = titles[view];
+  document.getElementById('headerSub').innerHTML   = subs[view];
+
+  // Call banner only on Dashboard
+  document.getElementById('callBanner').style.display = view === 'dashboard' ? 'flex' : 'none';
+
+  if(view !== 'transfer') resetWizard();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ═══ PHASE ═══
+function togglePhasePanel() { document.getElementById('phasePanel').classList.toggle('open'); }
+document.addEventListener('click', e => { if(!e.target.closest('#phasePanel')&&!e.target.closest('.phase-badge')) document.getElementById('phasePanel').classList.remove('open'); });
+function setPhase(p, el) {
+  currentPhase = p;
+  document.querySelectorAll('.phase-opt').forEach(o=>o.classList.remove('selected')); el.classList.add('selected');
+  document.getElementById('phaseBadge').textContent = 'Phase '+p+' ▾';
+  document.getElementById('phasePanel').classList.remove('open');
+  applyPhase();
+}
+function applyPhase() {
+  if(currentPhase===1) {
+    document.getElementById('callBannerText').textContent = 'You may be in a margin call. Please call support.';
+    document.getElementById('callBannerSub').textContent  = '1-888-762-2265 · Mon–Fri 8am–9pm ET';
+  } else {
+    document.getElementById('callBannerText').textContent = 'Margin Call: $1,840 required by Mar 17, 2025';
+    document.getElementById('callBannerSub').textContent  = 'Equity ratio: 26.1% — below 30% house minimum. Act now.';
+  }
+  document.getElementById('extraBalances').style.display = currentPhase>=2?'block':'none';
+  document.getElementById('callActions').style.display   = currentPhase>=3?'block':'none';
+  document.getElementById('landingChoice').style.display = currentPhase>=2?'flex':'none';
+  document.getElementById('mpBuyPowerSub').textContent   = currentPhase>=2?'Cash + borrowing (Reg T + Exchange + Day-Trade)':'Cash + borrowing (2× Reg T)';
+  document.getElementById('multiMarginSub').textContent  = currentPhase>=2?'Multi-margin linked accounts (3 accounts)':'Single account view';
+  buildMarginTable(); populateCallModal();
+}
+function populateCallModal() {
+  if(currentPhase===1) {
+    document.getElementById('callModalTitle').textContent='Margin Call Notice';
+    document.getElementById('callModalSub').textContent='We detected activity that may require action on your account.';
+    document.getElementById('callModalDetail').innerHTML=`<div class="modal-detail-row"><span class="k">Status</span><span class="v" style="color:var(--red)">Potential Margin Call</span></div><div class="modal-detail-row"><span class="k">Action</span><span class="v">Contact Support</span></div>`;
+    document.getElementById('callModalActions').innerHTML=`<button class="btn btn-secondary" onclick="closeModal('callModal')">Close</button><a href="tel:18887622265" class="btn btn-primary" style="text-decoration:none">Call 1-888-762-2265</a>`;
+  } else {
+    document.getElementById('callModalTitle').textContent='Margin Call: Action Required';
+    document.getElementById('callModalSub').textContent='Your account equity has fallen below the house maintenance requirement.';
+    document.getElementById('callModalDetail').innerHTML=`<div class="modal-detail-row"><span class="k">Call Amount</span><span class="v" style="color:var(--red)">$1,840.00</span></div><div class="modal-detail-row"><span class="k">Date Issued</span><span class="v">Mar 13, 2025</span></div><div class="modal-detail-row"><span class="k">Due By</span><span class="v">Mar 17, 2025</span></div><div class="modal-detail-row"><span class="k">Equity Ratio</span><span class="v" style="color:var(--red)">26.1% (min 30%)</span></div>`;
+    document.getElementById('callModalActions').innerHTML=`<button class="btn btn-secondary" onclick="closeModal('callModal')">Close</button><button class="btn btn-primary" onclick="closeModal('callModal');navigate('transfer')">Deposit Cash Now</button>`;
+  }
+}
+
+// ═══ MARGIN TABLE ═══
+function buildMarginTable() {
+  const accts = currentPhase>=2 ? [
+    {name:'Margin Account',num:'····4821',driver:true, mv:'$196,600',debit:'$12,400',equity:'$184,200',bp:'$38,620',rate:'9.75%',maint:'30%',ratio:93.7,safe:true},
+    {name:'IRA Account',   num:'····3309',driver:false,mv:'$42,100', debit:'$0',     equity:'$42,100', bp:'$42,100',rate:'—',    maint:'25%',ratio:100, safe:true},
+    {name:'Joint Account', num:'····7712',driver:false,mv:'$28,400', debit:'$4,200', equity:'$24,200', bp:'$8,800', rate:'8.50%',maint:'30%',ratio:85.2,safe:true},
+  ] : [
+    {name:'Margin Account',num:'····4821',driver:false,mv:'$196,600',debit:'$12,400',equity:'$184,200',bp:'$38,620',rate:'9.75%',maint:'30%',ratio:93.7,safe:true},
+  ];
+  let h = `<thead><tr><th>Account</th><th>Market Value</th><th>Margin Debit</th><th>Margin Equity</th><th>Buying Power</th><th>Interest</th></tr></thead><tbody>`;
+  accts.forEach((a,i)=>{
+    const fc = a.ratio>50?'green':a.ratio>30?'orange':'red';
+    h+=`<tr class="expand-row" onclick="toggleDetailRow(${i})"><td><div class="acct-name">${a.name}${a.driver?'<span class="driver-badge">Driver</span>':''}</div><div class="acct-num">${a.num}</div></td><td><b>${a.mv}</b></td><td><b style="color:var(--${a.debit==='$0'?'green':'red'})">${a.debit}</b></td><td><b>${a.equity}</b></td><td><b>${a.bp}</b></td><td>${a.rate}</td></tr>
+    <tr class="detail-row" id="detail-${i}" style="display:none"><td colspan="6"><div class="detail-grid"><div class="detail-item"><div class="dk">House Maintenance</div><div class="dv">${a.maint}</div></div><div class="detail-item"><div class="dk">Equity Ratio</div><div class="dv" style="color:var(--${fc})">${a.ratio}%</div></div><div class="detail-item"><div class="dk">Call Risk</div><div class="dv" style="color:var(--${a.safe?'green':'red'})">${a.safe?'Safe':'At Risk'}</div></div></div><div class="prog-bar" style="width:100%;margin-top:8px"><div class="prog-fill ${fc}" style="width:${Math.min(a.ratio,100)}%"></div></div><div style="font-size:11px;color:var(--g500);margin-top:4px">Equity ratio: ${a.ratio}% (maintenance floor: ${a.maint})</div></td></tr>`;
+  });
+  h+='</tbody>';
+  document.getElementById('mpTable').innerHTML=h;
+}
+function toggleDetailRow(i){const r=document.getElementById('detail-'+i);const e=document.querySelectorAll('.expand-row')[i];const o=r.style.display!=='none';r.style.display=o?'none':'table-row';e.classList.toggle('open',!o);}
+
+// ═══ FORM ═══
+function onTxTypeChange(){
+  const t=document.getElementById('txType').value, f=document.getElementById('fromAcct'), to=document.getElementById('toAcct');
+  if(t==='dda-invest'){f.innerHTML=`<option value="">— Select DDA —</option><option value="checking">PNC Checking ····2203</option><option value="savings">PNC Savings ····9104</option>`;to.innerHTML=`<option value="">— Select Investment —</option><option value="margin">Margin Account ····4821</option><option value="ira">IRA Account ····3309</option>`;}
+  else if(t==='invest-dda'){f.innerHTML=`<option value="">— Select Investment —</option><option value="margin">Margin Account ····4821</option><option value="ira">IRA Account ····3309</option>`;to.innerHTML=`<option value="">— Select DDA —</option><option value="checking">PNC Checking ····2203</option><option value="savings">PNC Savings ····9104</option>`;}
+  else{f.innerHTML=`<option value="">— Select account —</option><option value="checking">PNC Checking ····2203</option><option value="savings">PNC Savings ····9104</option><option value="margin">Margin Account ····4821</option><option value="ira">IRA Account ····3309</option>`;to.innerHTML=`<option value="">— Select account —</option><option value="checking">PNC Checking ····2203</option><option value="savings">PNC Savings ····9104</option><option value="margin">Margin Account ····4821</option><option value="ira">IRA Account ····3309</option><option value="external">External Bank ····7700</option>`;}
+  onAccountChange();onToChange();updatePreview();
+}
+function onAccountChange(){const v=document.getElementById('fromAcct').value;document.getElementById('calloutBox').style.display=v==='margin'?'block':'none';updatePreview();}
+function onToChange(){const v=document.getElementById('toAcct').value;document.getElementById('autoPayNote').style.display=v==='margin'?'block':'none';updatePreview();}
+function updatePreview(){
+  const amt=parseFloat(document.getElementById('txAmount').value)||0,from=document.getElementById('fromAcct').value,to=document.getElementById('toAcct').value,box=document.getElementById('previewBox');
+  if(!from||!to||amt<=0){box.style.display='none';return;}box.style.display='block';
+  const cd=12400; let nd=cd;
+  if(to==='margin') nd=Math.max(0,cd-amt); if(from==='margin') nd=cd+amt;
+  const fmt=v=>'$'+Math.max(0,v).toLocaleString('en-US',{minimumFractionDigits:2});
+  document.getElementById('prvDebitBefore').textContent=fmt(cd);
+  document.getElementById('prvDebitAfter').textContent=fmt(nd)+(nd<cd?' ↓':nd>cd?' ↑':'');
+  document.getElementById('prvBuyPower').textContent=currentPhase>=2?fmt(38620+(cd-nd)*2):'Estimate unavailable (Phase 1)';
+  document.getElementById('prvSettle').textContent=(from==='external'||to==='external')?'1–3 business days (ACH)':'Same day (internal)';
+}
+function clearTxForm(){
+  ['fromAcct','toAcct','txAmount','txMemo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('txType').value='';
+  ['calloutBox','autoPayNote','previewBox'].forEach(id=>document.getElementById(id).style.display='none');
+}
+
+// ═══ WIZARD STEPS ═══
+function setWizardStep(step) {
+  [1,2,3].forEach(n=>{
+    document.getElementById('wstep'+n).style.display = n===step?'block':'none';
+    const dot=document.getElementById('wdot'+n);
+    dot.className='wstep'+(n<step?' done':n===step?' active':'');
+    const circ=document.getElementById('wc'+n);
+    circ.textContent = n<step?'✓':String(n);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function goStep2() {
+  const from=document.getElementById('fromAcct').value, to=document.getElementById('toAcct').value;
+  const amt=parseFloat(document.getElementById('txAmount').value);
+  const date=document.getElementById('txDate').value, memo=document.getElementById('txMemo').value;
+  if(!from||!to||!amt||amt<=0){alert('Please fill in all required fields.');return;}
+  if(from===to){alert('From and To accounts must be different.');return;}
+
+  const fmt=v=>'$'+v.toLocaleString('en-US',{minimumFractionDigits:2});
+  const isMarginDest=to==='margin', isMarginSrc=from==='margin';
+  const newDebit=isMarginDest?Math.max(0,12400-amt):null;
+  const settle=(from==='external'||to==='external')?'1–3 business days (ACH)':'Same day (internal)';
+  const landing=document.querySelector('input[name="landing"]:checked')?.value==='cash'?'Deposit to Cash':'Auto-apply to Margin Debit';
+
+  document.getElementById('reviewRows').innerHTML=`
+    <div class="review-row"><span class="rk">From Account</span><span class="rv">${acctLabels[from]||from}</span></div>
+    <div class="review-row"><span class="rk">To Account</span><span class="rv">${acctLabels[to]||to}</span></div>
+    <div class="review-row"><span class="rk">Transfer Amount</span><span class="rv" style="font-size:18px;color:var(--navy)">${fmt(amt)}</span></div>
+    <div class="review-row"><span class="rk">Transfer Date</span><span class="rv">${date}</span></div>
+    <div class="review-row"><span class="rk">Expected Settlement</span><span class="rv">${settle}</span></div>
+    ${isMarginDest?`<div class="review-row"><span class="rk">Landing Behavior</span><span class="rv">${landing}</span></div>`:''}
+    ${memo?`<div class="review-row"><span class="rk">Memo</span><span class="rv">${memo}</span></div>`:''}
+  `;
+
+  if(isMarginDest||isMarginSrc){
+    let ir=`<div class="review-row"><span class="rk">Current Margin Debit</span><span class="rv">${fmt(12400)}</span></div>
+    <div class="review-row"><span class="rk">Margin Debit After Transfer</span><span class="rv" style="color:var(--${isMarginDest?'green':'red'})">${isMarginDest?fmt(newDebit):fmt(12400+amt)}</span></div>`;
+    if(currentPhase>=2) ir+=`<div class="review-row"><span class="rk">Est. Buying Power After</span><span class="rv">${fmt(Math.max(0,38620+(12400-(isMarginDest?newDebit:12400+amt))*2))}</span></div>`;
+    document.getElementById('reviewImpactRows').innerHTML=ir;
+    document.getElementById('reviewImpact').style.display='block';
+  } else { document.getElementById('reviewImpact').style.display='none'; }
+
+  const warn=document.getElementById('reviewWarning');
+  warn.innerHTML=isMarginDest?`<div class="review-warning">⚠ Funds transferred to this account will be applied to reduce your $12,400 margin debit. This reduces interest charges.</div>`
+    :isMarginSrc?`<div class="review-warning">⚠ Withdrawing from a margin account reduces your equity. Ensure equity stays above maintenance requirements.</div>`:'';
+
+  setWizardStep(2);
+}
+
+function goStep1() { setWizardStep(1); }
+
+function goStep3() {
+  const from=document.getElementById('fromAcct').value, to=document.getElementById('toAcct').value;
+  const amt=parseFloat(document.getElementById('txAmount').value);
+  const date=document.getElementById('txDate').value, memo=document.getElementById('txMemo').value;
+  const fmt=v=>'$'+v.toLocaleString('en-US',{minimumFractionDigits:2});
+  const refNum='TXN-'+Math.random().toString(36).toUpperCase().slice(2,10);
+  const type=(from==='checking'||from==='savings')?'DDA → Investment':from==='margin'?'Investment → DDA':'Internal';
+  const landing=to==='margin'?'Auto-paydown':'Cash';
+
+  transferHistory.unshift({
+    date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+    from:acctLabels[from]||from, to:acctLabels[to]||to,
+    amount:fmt(amt), type, landing, status:'Pending'
+  });
+  renderHistory();
+
+  document.getElementById('confirmDetail').innerHTML=`
+    <div class="confirm-row big"><span class="ck">Amount</span><span class="cv">${fmt(amt)}</span></div>
+    <div class="confirm-row"><span class="ck">From</span><span class="cv">${acctLabels[from]||from}</span></div>
+    <div class="confirm-row"><span class="ck">To</span><span class="cv">${acctLabels[to]||to}</span></div>
+    <div class="confirm-row"><span class="ck">Transfer Date</span><span class="cv">${date}</span></div>
+    ${memo?`<div class="confirm-row"><span class="ck">Memo</span><span class="cv">${memo}</span></div>`:''}
+    <div class="confirm-row"><span class="ck">Status</span><span class="cv" style="color:var(--amber)">Processing</span></div>
+  `;
+  document.getElementById('confirmRef').textContent='Reference: '+refNum;
+  setWizardStep(3);
+}
+
+function startNewTransfer() { clearTxForm(); resetWizard(); }
+function resetWizard() { setWizardStep(1); }
+
+// ═══ HISTORY ═══
+function renderHistory(){
+  document.getElementById('histBody').innerHTML=transferHistory.map(h=>`
+    <tr><td>${h.date}</td><td>${h.from}</td><td>${h.to}</td>
+    <td><b>${h.amount}</b></td>
+    <td><span class="badge badge-navy">${h.type}</span></td>
+    <td>${h.landing}</td>
+    <td><span class="badge ${h.status==='Completed'?'badge-green':'badge-amber'}">${h.status}</span></td></tr>`).join('');
+}
+
+// ═══ CALCULATORS ═══
+function calcBuyPower(){
+  const eq=parseFloat(document.getElementById('calcEquity').value),drop=parseFloat(document.getElementById('calcDrop').value)/100;
+  document.getElementById('calcEquityVal').textContent='$'+eq.toLocaleString();
+  document.getElementById('calcDropVal').textContent=drop===0?'No drop (0%)':`Stock drops ${drop*100}%`;
+  const ps=eq*2,amv=ps*(1-drop),loan=ps-eq,ne=amv-loan,ratio=(ne/amv*100);const inCall=ratio<30;
+  const fmt=v=>'$'+Math.max(0,v).toLocaleString('en-US',{maximumFractionDigits:0});
+  document.getElementById('calcResult').innerHTML=`<div class="calc-result-row"><span>Max Purchase (2× Reg T)</span><b>${fmt(ps)}</b></div><div class="calc-result-row"><span>Your Equity</span><b>${fmt(eq)}</b></div><div class="calc-result-row"><span>Margin Loan</span><b>${fmt(loan)}</b></div>${drop>0?`<div class="calc-result-row"><span>Market Value After Drop</span><b>${fmt(amv)}</b></div><div class="calc-result-row"><span>Remaining Equity</span><b style="color:var(--${inCall?'red':'green'})">${fmt(ne)} (${ratio.toFixed(1)}%)</b></div>`:''}`;
+  document.getElementById('calcWarning').innerHTML=inCall?`<div class="scenario-highlight">🚨 <b>Margin Call triggered!</b> Equity ratio ${ratio.toFixed(1)}% is below the 30% house minimum.</div>`:drop>0?`<div style="font-size:13px;color:var(--green);margin-top:8px">✅ Account safe — equity ratio ${ratio.toFixed(1)}% above 30% minimum.</div>`:'';
+}
+function calcPaydown(){
+  const d=parseFloat(document.getElementById('calcDebit').value),dep=parseFloat(document.getElementById('calcDeposit').value);
+  document.getElementById('calcDebitVal').textContent='$'+d.toLocaleString();
+  document.getElementById('calcDepositVal').textContent='$'+dep.toLocaleString()+' deposit';
+  const nd=Math.max(0,d-dep),sav=(d-nd)*0.0975/365*30;
+  const fmt=v=>'$'+v.toLocaleString('en-US',{maximumFractionDigits:0});
+  document.getElementById('paydownResult').innerHTML=`<div class="calc-result-row"><span>Current Margin Debit</span><b style="color:var(--red)">${fmt(d)}</b></div><div class="calc-result-row"><span>After Deposit</span><b style="color:var(--green)">${fmt(nd)}</b></div><div class="calc-result-row"><span>Debit Reduced By</span><b>${fmt(Math.min(d,dep))}</b></div><div class="calc-result-row"><span>Est. 30-Day Interest Saved</span><b style="color:var(--green)">$${sav.toFixed(2)}</b></div>`;
+}
+
+// ═══ MODAL / TOAST ═══
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function showToast(){const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);}
+</script>
+</body>
+</html>
